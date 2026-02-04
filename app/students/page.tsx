@@ -68,36 +68,28 @@ export default function StudentsPage() {
             <Navbar />
 
             <section className="section container" style={{ paddingTop: '140px' }}>
-                <div style={{ marginBottom: '3rem' }}>
-                    <h2 style={{ fontSize: '2.5rem', marginBottom: '1.5rem' }}>发现 <span className="gradient-text">优秀人才</span></h2>
+                <div className="page-header">
+                    <h2 className="page-title">发现 <span className="gradient-text">优秀人才</span></h2>
+                    <p className="page-lead">聚合上理工优秀本科与研究生画像，快速定位科研合作伙伴。</p>
 
-                    <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                        <div className="glass" style={{ display: 'flex', alignItems: 'center', padding: '0 1.5rem', flex: 1, minWidth: '300px' }}>
-                            <Search size={24} color="#94a3b8" />
+                    <div className="filter-row" style={{ marginTop: '1.8rem' }}>
+                        <div className="search-bar">
+                            <Search size={22} color="#9aa4b2" />
                             <input
                                 type="text"
                                 placeholder="搜索学生姓名、专业或技能关键词..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                style={{
-                                    background: 'transparent',
-                                    border: 'none',
-                                    padding: '1.2rem 1rem',
-                                    color: 'white',
-                                    width: '100%',
-                                    fontSize: '1rem',
-                                    outline: 'none'
-                                }}
+                                className="input"
                             />
                         </div>
 
-                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <div className="pill-group">
                             {grades.map(grade => (
                                 <button
                                     key={grade}
                                     onClick={() => setFilterGrade(grade)}
-                                    className={`btn ${filterGrade === grade ? 'btn-primary' : 'btn-glass'}`}
-                                    style={{ padding: '0.6rem 1rem', fontSize: '0.85rem' }}
+                                    className={`pill ${filterGrade === grade ? 'active' : ''}`}
                                 >
                                     {grade}
                                 </button>
@@ -121,14 +113,14 @@ export default function StudentsPage() {
                                 </div>
                             </div>
 
-                            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.2rem' }}>
-                                <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.5rem', borderRadius: '8px', flex: 1, textAlign: 'center' }}>
-                                    <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginBottom: '0.2rem' }}>GPA</div>
-                                    <div style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--accent)' }}>{student.gpa}</div>
+                            <div className="metric-grid">
+                                <div className="metric-card">
+                                    <div className="metric-label">GPA</div>
+                                    <div className="metric-value">{student.gpa}</div>
                                 </div>
-                                <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.5rem', borderRadius: '8px', flex: 1, textAlign: 'center' }}>
-                                    <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginBottom: '0.2rem' }}>英语水平</div>
-                                    <div style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--primary)' }}>{student.cet}</div>
+                                <div className="metric-card">
+                                    <div className="metric-label">英语水平</div>
+                                    <div className="metric-value" style={{ color: 'var(--primary)' }}>{student.cet}</div>
                                 </div>
                             </div>
 
@@ -140,16 +132,16 @@ export default function StudentsPage() {
                             </div>
 
                             <div style={{ marginBottom: '1.5rem' }}>
-                                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                                <div className="tag-list">
                                     {student.skills.map(skill => (
-                                        <span key={skill} style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.2)', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.7rem', color: 'var(--primary)' }}>
+                                        <span key={skill} className="tag-item">
                                             {skill}
                                         </span>
                                     ))}
                                 </div>
                             </div>
 
-                            <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '1.2rem' }}>
+                            <div className="card-footer" style={{ justifyContent: 'center' }}>
                                 <a href={`mailto:${student.contact}`} className="btn btn-glass" style={{ width: '100%', justifyContent: 'center', fontSize: '0.9rem' }}>
                                     <Mail size={16} /> 查看简历并预约面试
                                 </a>

@@ -10,17 +10,17 @@ export default function ProfilePage() {
     const router = useRouter()
     const [role, setRole] = useState<'student' | 'teacher'>('student')
     const [selectedSkills, setSelectedSkills] = useState<string[]>(['Python', '计算机视觉'])
-    const [isAuth, setIsAuth] = useState(false)
+    const [isAuth] = useState(() => {
+        if (typeof window === 'undefined') return false
+        return Boolean(localStorage.getItem('user'))
+    })
 
     // 模拟从统一登录获取用户信息
     useEffect(() => {
-        const user = localStorage.getItem('user')
-        if (!user) {
+        if (!isAuth) {
             router.push('/login')
-        } else {
-            setIsAuth(true)
         }
-    }, [router])
+    }, [isAuth, router])
 
     return (
         <main>
@@ -29,7 +29,7 @@ export default function ProfilePage() {
             <section className="section container" style={{ paddingTop: '140px' }}>
                 <div style={{ maxWidth: '800px', margin: '0 auto' }}>
                     {/* Header & Role Switcher */}
-                    <div className="glass" style={{ padding: '2rem', marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div className="glass" style={{ padding: '2rem', marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                             <div style={{ position: 'relative' }}>
                                 <div style={{ width: '80px', height: '80px', background: 'var(--primary)', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
@@ -44,40 +44,22 @@ export default function ProfilePage() {
                             <div>
                                 <h2 style={{ marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                     个人中心
-                                    {isAuth && <span style={{ fontSize: '0.75rem', fontWeight: 'normal', background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>已通过学校认证</span>}
+                                    {isAuth && <span className="badge accent">已通过学校认证</span>}
                                 </h2>
-                                <p style={{ fontSize: '0.9rem' }}>学号/工号: 20240101 | {role === 'student' ? '学生身份' : '教师身份'}</p>
+                                <p className="muted" style={{ fontSize: '0.9rem' }}>学号/工号: 20240101 | {role === 'student' ? '学生身份' : '教师身份'}</p>
                             </div>
                         </div>
 
-                        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', padding: '0.4rem', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
+                        <div className="role-toggle">
                             <button
                                 onClick={() => setRole('student')}
-                                style={{
-                                    padding: '0.6rem 1.2rem',
-                                    borderRadius: '10px',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    background: role === 'student' ? 'var(--primary)' : 'transparent',
-                                    color: 'white',
-                                    fontWeight: 600,
-                                    transition: 'all 0.2s'
-                                }}
+                                className={`role-btn ${role === 'student' ? 'active' : ''}`}
                             >
                                 我是学生
                             </button>
                             <button
                                 onClick={() => setRole('teacher')}
-                                style={{
-                                    padding: '0.6rem 1.2rem',
-                                    borderRadius: '10px',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    background: role === 'teacher' ? 'var(--primary)' : 'transparent',
-                                    color: 'white',
-                                    fontWeight: 600,
-                                    transition: 'all 0.2s'
-                                }}
+                                className={`role-btn ${role === 'teacher' ? 'active' : ''}`}
                             >
                                 我是老师
                             </button>
@@ -86,41 +68,41 @@ export default function ProfilePage() {
 
                     <div className="grid" style={{ gap: '2rem' }}>
                         {/* 基本信息 */}
-                        <div className="glass" style={{ padding: '2.5rem' }}>
+                        <div className="glass form-card">
                             <h3 style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                 <PenTool size={20} color="var(--primary)" /> 基本信息
                             </h3>
-                            <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                            <div className="form-grid">
                                 <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: '#94a3b8' }}>姓名 (由学校库同步)</label>
-                                    <input type="text" className="glass" disabled value="测试用户" style={{ width: '100%', padding: '0.8rem', color: 'white', border: '1px solid var(--glass-border)', outline: 'none', opacity: 0.7 }} />
+                                    <label className="form-label">姓名 (由学校库同步)</label>
+                                    <input type="text" className="form-input" disabled value="测试用户" />
                                 </div>
                                 <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: '#94a3b8' }}>所属学院</label>
-                                    <input type="text" className="glass" style={{ width: '100%', padding: '0.8rem', color: 'white', border: '1px solid var(--glass-border)', outline: 'none' }} placeholder="例如：信息与通信工程学院" />
+                                    <label className="form-label">所属学院</label>
+                                    <input type="text" className="form-input" placeholder="例如：信息与通信工程学院" />
                                 </div>
                                 <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: '#94a3b8' }}>校区</label>
-                                    <select className="glass" style={{ width: '100%', padding: '0.8rem', color: 'white', border: '1px solid var(--glass-border)', outline: 'none', background: 'var(--background)' }}>
+                                    <label className="form-label">校区</label>
+                                    <select className="form-input" style={{ background: 'var(--background)' }}>
                                         <option>本部校区</option>
                                         <option>沙河校区</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: '#94a3b8' }}>公开联系方式 (Email)</label>
-                                    <input type="email" className="glass" style={{ width: '100%', padding: '0.8rem', color: 'white', border: '1px solid var(--glass-border)', outline: 'none' }} placeholder="student@university.edu.cn" />
+                                    <label className="form-label">公开联系方式 (Email)</label>
+                                    <input type="email" className="form-input" placeholder="student@university.edu.cn" />
                                 </div>
                             </div>
                         </div>
 
                         {/* 学术技能 */}
-                        <div className="glass" style={{ padding: '2.5rem' }}>
+                        <div className="glass form-card">
                             <h3 style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                 <BookOpen size={20} color="var(--secondary)" /> {role === 'student' ? '能力标签' : '研究关键词'}
                             </h3>
 
                             <div style={{ marginBottom: '2rem' }}>
-                                <label style={{ display: 'block', marginBottom: '1rem', fontSize: '0.9rem', color: '#94a3b8' }}>
+                                <label className="form-label" style={{ marginBottom: '1rem' }}>
                                     从主流库中选择最匹配的标签：
                                 </label>
                                 <SkillSelector
@@ -130,13 +112,13 @@ export default function ProfilePage() {
                             </div>
 
                             <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: '#94a3b8' }}>
+                                <label className="form-label">
                                     {role === 'student' ? '个人详情与项目成果' : '课题组研究背景'}
                                 </label>
                                 <textarea
-                                    className="glass"
+                                    className="form-input"
                                     rows={5}
-                                    style={{ width: '100%', padding: '0.8rem', color: 'white', border: '1px solid var(--glass-border)', outline: 'none', resize: 'vertical' }}
+                                    style={{ resize: 'vertical' }}
                                     placeholder={role === 'student' ? '请详细描述您的科研经历、竞赛成果或实验室背景...' : '请介绍目前课题组的主要研究方向、在研项目及对学生的招募要求...'}
                                 />
                             </div>
@@ -146,7 +128,7 @@ export default function ProfilePage() {
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', fontSize: '0.85rem' }}>
                                 <ShieldCheck size={16} /> 您的真实身份信息已通过学校加密校验
                             </div>
-                            <button href="/" className="btn btn-primary" style={{ padding: '1rem 3rem' }}>
+                            <button type="button" className="btn btn-primary" style={{ padding: '1rem 3rem' }}>
                                 <Save size={20} /> 更新个人档案
                             </button>
                         </div>

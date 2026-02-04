@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-    title: 'Research Bridge - Connecting Teachers & Students',
-    description: 'A platform for research collaboration and talent discovery.',
+    title: '上海理工大学科研协同平台',
+    description: '面向上海理工大学师生的科研课题对接与人才协同平台。',
 }
 
 export default function RootLayout({
@@ -12,7 +12,7 @@ export default function RootLayout({
     children: React.ReactNode
 }) {
     return (
-        <html lang="en">
+        <html lang="zh-CN">
             <body>{children}</body>
         </html>
     )
