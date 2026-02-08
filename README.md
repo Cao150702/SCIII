@@ -53,6 +53,32 @@ MYSQL_DATABASE=researchbridge
 MYSQL_CONNECTION_LIMIT=10
 ```
 
+### 3.1 服务器部署 MySQL（Linux 示例）
+以下以 Ubuntu 为例，其他发行版请替换包管理器与服务名：
+
+```bash
+sudo apt update
+sudo apt install -y mysql-server
+sudo systemctl enable --now mysql
+```
+
+创建数据库与用户（请替换用户名/密码）：
+
+```bash
+sudo mysql -e "CREATE DATABASE researchbridge DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+sudo mysql -e "CREATE USER 'rb_user'@'%' IDENTIFIED BY 'rb_password';"
+sudo mysql -e "GRANT ALL PRIVILEGES ON researchbridge.* TO 'rb_user'@'%'; FLUSH PRIVILEGES;"
+```
+
+初始化表结构与示例数据（在项目目录执行）：
+
+```bash
+mysql -u rb_user -p researchbridge < db/schema.sql
+mysql -u rb_user -p researchbridge < db/seed.sql
+```
+
+如果应用与 MySQL 不在同一台机器，需要放通 3306 端口并配置 `MYSQL_HOST` 为数据库服务器地址。
+
 ### 4. 启动开发服务器
 ```bash
 npm run dev
