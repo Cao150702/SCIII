@@ -10,6 +10,8 @@
 - **🚀 课题搜索引擎**：支持按课题级别（如“国创”、“横向”）、所属院系及招募状态进行筛选。
 - **👨‍🎓 优秀人才广场**：展示学生多维度的学术画像，包括年级、GPA、CET 成绩及核心技能。
 - **⚙️ 统一资料中心**：支持教师与学生身份的一键切换，模块化管理科研背景与技能标签。
+- **🧭 申请审核与通知**：学生提交申请，导师审批通过/拒绝，系统发送通知提醒。
+- **📊 我的工作台**：学生查看申请进度，导师查看待审批列表。
 - **💎 现代视觉体验**：采用磨砂玻璃（Glassmorphism）设计风格，提供极致的视觉享受与流畅的交互。
 
 ## 🛠️ 技术栈
@@ -32,7 +34,26 @@ cd SCIII
 npm install
 ```
 
-### 3. 启动开发服务器
+### 3. 配置 MySQL
+创建数据库后执行初始化 SQL：
+
+```bash
+mysql -u <user> -p <database> < db/schema.sql
+mysql -u <user> -p <database> < db/seed.sql
+```
+
+创建 `.env.local` 并配置：
+
+```bash
+MYSQL_HOST=127.0.0.1
+MYSQL_PORT=3306
+MYSQL_USER=your_user
+MYSQL_PASSWORD=your_password
+MYSQL_DATABASE=researchbridge
+MYSQL_CONNECTION_LIMIT=10
+```
+
+### 4. 启动开发服务器
 ```bash
 npm run dev
 ```

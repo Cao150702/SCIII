@@ -1,22 +1,26 @@
 'use client'
 
 import Navbar from '@/components/Navbar'
-import { School, ShieldCheck, ArrowRight } from 'lucide-react'
+import { School, ShieldCheck, ArrowRight, UserCheck, GraduationCap } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 export default function LoginPage() {
     const router = useRouter()
-    const [isLoading, setIsLoading] = useState(false)
+    const [loadingRole, setLoadingRole] = useState<'student' | 'teacher' | null>(null)
 
-    const handleLogin = () => {
-        setIsLoading(true)
+    const handleLogin = (role: 'student' | 'teacher') => {
+        setLoadingRole(role)
         // 模拟统一身份认证跳转与回调
         setTimeout(() => {
-            localStorage.setItem('user', JSON.stringify({ name: '测试学生', role: 'student', id: '20240101' }))
+            if (role === 'teacher') {
+                localStorage.setItem('user', JSON.stringify({ name: '张教授', role: 'teacher', id: 'T001' }))
+            } else {
+                localStorage.setItem('user', JSON.stringify({ name: '测试学生', role: 'student', id: '20240101' }))
+            }
             router.push('/profile')
             router.refresh()
-        }, 1500)
+        }, 1200)
     }
 
     return (
@@ -41,14 +45,24 @@ export default function LoginPage() {
                         </div>
                     </div>
 
-                    <button
-                        className="btn btn-primary"
-                        style={{ width: '100%', padding: '1rem', justifyContent: 'center', fontSize: '1.05rem' }}
-                        onClick={handleLogin}
-                        disabled={isLoading}
-                    >
-                        {isLoading ? '正在跳转认证中心...' : <>立即通过校内账号登录 <ArrowRight size={20} /></>}
-                    </button>
+                    <div style={{ display: 'grid', gap: '0.8rem' }}>
+                        <button
+                            className="btn btn-primary"
+                            style={{ width: '100%', padding: '1rem', justifyContent: 'center', fontSize: '1.05rem' }}
+                            onClick={() => handleLogin('student')}
+                            disabled={loadingRole !== null}
+                        >
+                            {loadingRole === 'student' ? '正在跳转认证中心...' : <>学生账号登录 <GraduationCap size={20} /></>}
+                        </button>
+                        <button
+                            className="btn btn-glass"
+                            style={{ width: '100%', padding: '1rem', justifyContent: 'center', fontSize: '1.05rem' }}
+                            onClick={() => handleLogin('teacher')}
+                            disabled={loadingRole !== null}
+                        >
+                            {loadingRole === 'teacher' ? '正在跳转认证中心...' : <>导师账号登录 <UserCheck size={20} /></>}
+                        </button>
+                    </div>
 
                     <p className="muted" style={{ marginTop: '1.6rem', fontSize: '0.8rem' }}>
                         登录即代表您同意《科研协同平台学术社区公约》

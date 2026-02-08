@@ -3,24 +3,54 @@
 import { useState, useEffect } from 'react'
 import Navbar from '@/components/Navbar'
 import SkillSelector from '@/components/SkillSelector'
-import { User, BookOpen, PenTool, Save, School, GraduationCap, ShieldCheck, BadgeCheck } from 'lucide-react'
+import { User, BookOpen, PenTool, Save, ShieldCheck, BadgeCheck } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+
+type CurrentUser = {
+    id: string
+    name: string
+    role: 'student' | 'teacher'
+}
 
 export default function ProfilePage() {
     const router = useRouter()
     const [role, setRole] = useState<'student' | 'teacher'>('student')
     const [selectedSkills, setSelectedSkills] = useState<string[]>(['Python', '计算机视觉'])
-    const [isAuth] = useState(() => {
-        if (typeof window === 'undefined') return false
-        return Boolean(localStorage.getItem('user'))
-    })
+    const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null)
+    const [isAuth, setIsAuth] = useState(false)
 
-    // 模拟从统一登录获取用户信息
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const raw = localStorage.getItem('user')
+        if (!raw) {
+            setIsAuth(false)
+            return
+        }
+        try {
+            const parsed = JSON.parse(raw)
+            if (parsed?.id && parsed?.role) {
+                setCurrentUser(parsed)
+                setRole(parsed.role)
+                setIsAuth(true)
+                return
+            }
+        } catch (_) {
+            setIsAuth(false)
+        }
+    }, [])
+
     useEffect(() => {
         if (!isAuth) {
             router.push('/login')
         }
     }, [isAuth, router])
+
+    const handleSaveProfile = () => {
+        if (!currentUser) return
+        const nextUser = { ...currentUser, role }
+        localStorage.setItem('user', JSON.stringify(nextUser))
+        setCurrentUser(nextUser)
+    }
 
     return (
         <main>
@@ -28,7 +58,6 @@ export default function ProfilePage() {
 
             <section className="section container" style={{ paddingTop: '140px' }}>
                 <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-                    {/* Header & Role Switcher */}
                     <div className="glass" style={{ padding: '2rem', marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                             <div style={{ position: 'relative' }}>
@@ -46,7 +75,9 @@ export default function ProfilePage() {
                                     个人中心
                                     {isAuth && <span className="badge accent">已通过学校认证</span>}
                                 </h2>
-                                <p className="muted" style={{ fontSize: '0.9rem' }}>学号/工号: 20240101 | {role === 'student' ? '学生身份' : '教师身份'}</p>
+                                <p className="muted" style={{ fontSize: '0.9rem' }}>
+                                    学号/工号: {currentUser?.id || '20240101'} | {role === 'student' ? '学生身份' : '教师身份'}
+                                </p>
                             </div>
                         </div>
 
@@ -67,7 +98,6 @@ export default function ProfilePage() {
                     </div>
 
                     <div className="grid" style={{ gap: '2rem' }}>
-                        {/* 基本信息 */}
                         <div className="glass form-card">
                             <h3 style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                 <PenTool size={20} color="var(--primary)" /> 基本信息
@@ -75,7 +105,7 @@ export default function ProfilePage() {
                             <div className="form-grid">
                                 <div>
                                     <label className="form-label">姓名 (由学校库同步)</label>
-                                    <input type="text" className="form-input" disabled value="测试用户" />
+                                    <input type="text" className="form-input" disabled value={currentUser?.name || '测试用户'} />
                                 </div>
                                 <div>
                                     <label className="form-label">所属学院</label>
@@ -95,7 +125,6 @@ export default function ProfilePage() {
                             </div>
                         </div>
 
-                        {/* 学术技能 */}
                         <div className="glass form-card">
                             <h3 style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                 <BookOpen size={20} color="var(--secondary)" /> {role === 'student' ? '能力标签' : '研究关键词'}
@@ -128,7 +157,7 @@ export default function ProfilePage() {
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', fontSize: '0.85rem' }}>
                                 <ShieldCheck size={16} /> 您的真实身份信息已通过学校加密校验
                             </div>
-                            <button type="button" className="btn btn-primary" style={{ padding: '1rem 3rem' }}>
+                            <button type="button" className="btn btn-primary" style={{ padding: '1rem 3rem' }} onClick={handleSaveProfile}>
                                 <Save size={20} /> 更新个人档案
                             </button>
                         </div>

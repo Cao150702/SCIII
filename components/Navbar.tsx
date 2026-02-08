@@ -24,10 +24,13 @@ export default function Navbar() {
                 <Link href="/students">人才查询</Link>
 
                 {isLoggedIn ? (
-                    <Link href="/profile" className="btn btn-primary">
-                        <User size={18} />
-                        个人中心
-                    </Link>
+                    <>
+                        <Link href="/dashboard">我的工作台</Link>
+                        <Link href="/profile" className="btn btn-primary">
+                            <User size={18} />
+                            个人中心
+                        </Link>
+                    </>
                 ) : (
                     <Link href="/login" className="btn btn-glass">
                         <LogIn size={18} />
