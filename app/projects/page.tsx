@@ -77,10 +77,11 @@ export default function ProjectsPage() {
     const [error, setError] = useState<string | null>(null)
     const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null)
     const [activeRating, setActiveRating] = useState<string | null>(null)
-    const [ratingDrafts, setRatingDrafts] = useState<Record<string, { score: number; comment: string }>>({})
+    const [ratingDrafts, setRatingDrafts] = useState<Record<string, { score: number; comment: string; attitude: number; ability: number; contribution: number }>>({})
     const [actionHint, setActionHint] = useState<string | null>(null)
     const [studentRequests, setStudentRequests] = useState<StudentJoinRequest[]>([])
     const [teacherRequests, setTeacherRequests] = useState<TeacherJoinRequest[]>([])
+    const [pendingAction, setPendingAction] = useState<string | null>(null)
 
     useEffect(() => {
         if (typeof window === 'undefined') return
@@ -163,10 +164,13 @@ export default function ProjectsPage() {
             setActionHint('请先登录后再申请加入')
             return
         }
+        if (pendingAction) return
+        setPendingAction(`apply-${projectId}`)
         const response = await apiFetch(`/api/projects/${projectId}/apply`, { method: 'POST' })
         const data = await response.json().catch(() => ({}))
         if (!response.ok) {
             setActionHint(data?.error || '申请失败')
+            setPendingAction(null)
             return
         }
         setActionHint('申请已提交，等待导师审核')
@@ -176,20 +180,27 @@ export default function ProjectsPage() {
             const reqData = await reqResponse.json().catch(() => ({}))
             if (reqResponse.ok) setStudentRequests(reqData.requests || [])
         }
+        setPendingAction(null)
     }
 
     const handleLeave = async (projectId: number) => {
+        if (pendingAction) return
+        setPendingAction(`leave-${projectId}`)
         const response = await apiFetch(`/api/projects/${projectId}/leave`, { method: 'POST' })
         const data = await response.json().catch(() => ({}))
         if (!response.ok) {
             setActionHint(data?.error || '退出失败')
+            setPendingAction(null)
             return
         }
         setActionHint('已退出科研组')
         await loadProjects()
+        setPendingAction(null)
     }
 
     const handleKick = async (projectId: number, studentId: string) => {
+        if (pendingAction) return
+        setPendingAction(`kick-${projectId}-${studentId}`)
         const response = await apiFetch(`/api/projects/${projectId}/kick`, {
             method: 'POST',
             body: JSON.stringify({ studentId })
@@ -197,13 +208,17 @@ export default function ProjectsPage() {
         const data = await response.json().catch(() => ({}))
         if (!response.ok) {
             setActionHint(data?.error || '踢出失败')
+            setPendingAction(null)
             return
         }
         setActionHint('已移除该学生')
         await loadProjects()
+        setPendingAction(null)
     }
 
     const handleApprove = async (projectId: number, studentId: string) => {
+        if (pendingAction) return
+        setPendingAction(`approve-${projectId}-${studentId}`)
         const response = await apiFetch(`/api/projects/${projectId}/approve`, {
             method: 'POST',
             body: JSON.stringify({ studentId })
@@ -211,6 +226,7 @@ export default function ProjectsPage() {
         const data = await response.json().catch(() => ({}))
         if (!response.ok) {
             setActionHint(data?.error || '审批失败')
+            setPendingAction(null)
             return
         }
         setActionHint('已通过申请')
@@ -220,9 +236,12 @@ export default function ProjectsPage() {
             const reqData = await reqResponse.json().catch(() => ({}))
             if (reqResponse.ok) setTeacherRequests(reqData.requests || [])
         }
+        setPendingAction(null)
     }
 
     const handleReject = async (projectId: number, studentId: string) => {
+        if (pendingAction) return
+        setPendingAction(`reject-${projectId}-${studentId}`)
         const response = await apiFetch(`/api/projects/${projectId}/reject`, {
             method: 'POST',
             body: JSON.stringify({ studentId })
@@ -230,6 +249,7 @@ export default function ProjectsPage() {
         const data = await response.json().catch(() => ({}))
         if (!response.ok) {
             setActionHint(data?.error || '拒绝失败')
+            setPendingAction(null)
             return
         }
         setActionHint('已拒绝申请')
@@ -238,12 +258,15 @@ export default function ProjectsPage() {
             const reqData = await reqResponse.json().catch(() => ({}))
             if (reqResponse.ok) setTeacherRequests(reqData.requests || [])
         }
+        setPendingAction(null)
     }
 
     const handleRatingSubmit = async (projectId: number, rateeId: string) => {
         const key = buildRatingKey(projectId, rateeId)
         const draft = ratingDrafts[key]
         if (!draft) return
+        if (pendingAction) return
+        setPendingAction(`rate-${projectId}-${rateeId}`)
 
         const response = await apiFetch('/api/ratings', {
             method: 'POST',
@@ -251,28 +274,36 @@ export default function ProjectsPage() {
                 projectId,
                 rateeId,
                 score: draft.score,
+                scoreAttitude: draft.attitude,
+                scoreAbility: draft.ability,
+                scoreContribution: draft.contribution,
                 comment: draft.comment
             })
         })
         const data = await response.json().catch(() => ({}))
         if (!response.ok) {
             setActionHint(data?.error || '评分失败')
+            setPendingAction(null)
             return
         }
         setActionHint('评分已提交')
         setActiveRating(null)
         await loadProjects()
+        setPendingAction(null)
     }
 
-    const updateRatingDraft = (projectId: number, rateeId: string, next: { score?: number; comment?: string }) => {
+    const updateRatingDraft = (projectId: number, rateeId: string, next: { score?: number; comment?: string; attitude?: number; ability?: number; contribution?: number }) => {
         const key = buildRatingKey(projectId, rateeId)
         setRatingDrafts((prev) => {
-            const current = prev[key] || { score: 5, comment: '' }
+            const current = prev[key] || { score: 5, comment: '', attitude: 5, ability: 5, contribution: 5 }
             return {
                 ...prev,
                 [key]: {
                     score: next.score ?? current.score,
-                    comment: next.comment ?? current.comment
+                    comment: next.comment ?? current.comment,
+                    attitude: next.attitude ?? current.attitude,
+                    ability: next.ability ?? current.ability,
+                    contribution: next.contribution ?? current.contribution
                 }
             }
         })
@@ -387,13 +418,18 @@ export default function ProjectsPage() {
                                                         className="btn btn-primary"
                                                         style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }}
                                                         onClick={() => handleApply(project.id)}
-                                                        disabled={studentRequest?.status === 'pending'}
+                                                        disabled={studentRequest?.status === 'pending' || pendingAction === `apply-${project.id}`}
                                                     >
                                                         <UserPlus size={14} /> {studentRequest?.status === 'pending' ? '申请中' : '申请加入'}
                                                     </button>
                                                 )}
                                                 {currentUser?.role === 'student' && isMember && (
-                                                    <button className="btn btn-glass" style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }} onClick={() => handleLeave(project.id)}>
+                                                    <button
+                                                        className="btn btn-glass"
+                                                        style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }}
+                                                        onClick={() => handleLeave(project.id)}
+                                                        disabled={pendingAction === `leave-${project.id}`}
+                                                    >
                                                         <LogOut size={14} /> 自己退出
                                                     </button>
                                                 )}
@@ -416,7 +452,7 @@ export default function ProjectsPage() {
                                             <div className="member-list">
                                                 {project.members.map(member => {
                                                     const ratingKey = buildRatingKey(project.id, member.id)
-                                                    const ratingDraft = ratingDrafts[ratingKey] || { score: 5, comment: '' }
+                                                    const ratingDraft = ratingDrafts[ratingKey] || { score: 5, comment: '', attitude: 5, ability: 5, contribution: 5 }
 
                                                     return (
                                                         <div key={member.id} className="member-card">
@@ -431,7 +467,11 @@ export default function ProjectsPage() {
                                                             </div>
                                                             <div className="member-actions">
                                                                 {isTeacherAdmin && (
-                                                                    <button className="btn btn-glass" onClick={() => handleKick(project.id, member.id)}>
+                                                                    <button
+                                                                        className="btn btn-glass"
+                                                                        onClick={() => handleKick(project.id, member.id)}
+                                                                        disabled={pendingAction === `kick-${project.id}-${member.id}`}
+                                                                    >
                                                                         <UserMinus size={14} /> 踢出
                                                                     </button>
                                                                 )}
@@ -447,10 +487,43 @@ export default function ProjectsPage() {
                                                             {activeRating === ratingKey && currentUser?.role === 'teacher' && isTeacherAdmin && (
                                                                 <div className="rating-form">
                                                                     <label>
-                                                                        评分
+                                                                        综合评分
                                                                         <select
                                                                             value={ratingDraft.score}
                                                                             onChange={(event) => updateRatingDraft(project.id, member.id, { score: Number(event.target.value) })}
+                                                                        >
+                                                                            {[5, 4, 3, 2, 1].map((score) => (
+                                                                                <option key={score} value={score}>{score} 分</option>
+                                                                            ))}
+                                                                        </select>
+                                                                    </label>
+                                                                    <label>
+                                                                        态度
+                                                                        <select
+                                                                            value={ratingDraft.attitude}
+                                                                            onChange={(event) => updateRatingDraft(project.id, member.id, { attitude: Number(event.target.value) })}
+                                                                        >
+                                                                            {[5, 4, 3, 2, 1].map((score) => (
+                                                                                <option key={score} value={score}>{score} 分</option>
+                                                                            ))}
+                                                                        </select>
+                                                                    </label>
+                                                                    <label>
+                                                                        能力
+                                                                        <select
+                                                                            value={ratingDraft.ability}
+                                                                            onChange={(event) => updateRatingDraft(project.id, member.id, { ability: Number(event.target.value) })}
+                                                                        >
+                                                                            {[5, 4, 3, 2, 1].map((score) => (
+                                                                                <option key={score} value={score}>{score} 分</option>
+                                                                            ))}
+                                                                        </select>
+                                                                    </label>
+                                                                    <label>
+                                                                        贡献
+                                                                        <select
+                                                                            value={ratingDraft.contribution}
+                                                                            onChange={(event) => updateRatingDraft(project.id, member.id, { contribution: Number(event.target.value) })}
                                                                         >
                                                                             {[5, 4, 3, 2, 1].map((score) => (
                                                                                 <option key={score} value={score}>{score} 分</option>
@@ -494,8 +567,20 @@ export default function ProjectsPage() {
                                                             </div>
                                                         </div>
                                                         <div className="member-actions">
-                                                            <button className="btn btn-primary" onClick={() => handleApprove(project.id, request.student_id)}>通过</button>
-                                                            <button className="btn btn-glass" onClick={() => handleReject(project.id, request.student_id)}>拒绝</button>
+                                                            <button
+                                                                className="btn btn-primary"
+                                                                onClick={() => handleApprove(project.id, request.student_id)}
+                                                                disabled={pendingAction === `approve-${project.id}-${request.student_id}`}
+                                                            >
+                                                                通过
+                                                            </button>
+                                                            <button
+                                                                className="btn btn-glass"
+                                                                onClick={() => handleReject(project.id, request.student_id)}
+                                                                disabled={pendingAction === `reject-${project.id}-${request.student_id}`}
+                                                            >
+                                                                拒绝
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 ))}
@@ -510,10 +595,43 @@ export default function ProjectsPage() {
                                             </div>
                                             <div className="rating-form">
                                                 <label>
-                                                    评分
+                                                    综合评分
                                                     <select
                                                         value={(ratingDrafts[buildRatingKey(project.id, project.teacher.id)] || { score: 5 }).score}
                                                         onChange={(event) => updateRatingDraft(project.id, project.teacher.id, { score: Number(event.target.value) })}
+                                                    >
+                                                        {[5, 4, 3, 2, 1].map((score) => (
+                                                            <option key={score} value={score}>{score} 分</option>
+                                                        ))}
+                                                    </select>
+                                                </label>
+                                                <label>
+                                                    态度
+                                                    <select
+                                                        value={(ratingDrafts[buildRatingKey(project.id, project.teacher.id)] || { attitude: 5 }).attitude}
+                                                        onChange={(event) => updateRatingDraft(project.id, project.teacher.id, { attitude: Number(event.target.value) })}
+                                                    >
+                                                        {[5, 4, 3, 2, 1].map((score) => (
+                                                            <option key={score} value={score}>{score} 分</option>
+                                                        ))}
+                                                    </select>
+                                                </label>
+                                                <label>
+                                                    指导能力
+                                                    <select
+                                                        value={(ratingDrafts[buildRatingKey(project.id, project.teacher.id)] || { ability: 5 }).ability}
+                                                        onChange={(event) => updateRatingDraft(project.id, project.teacher.id, { ability: Number(event.target.value) })}
+                                                    >
+                                                        {[5, 4, 3, 2, 1].map((score) => (
+                                                            <option key={score} value={score}>{score} 分</option>
+                                                        ))}
+                                                    </select>
+                                                </label>
+                                                <label>
+                                                    资源支持
+                                                    <select
+                                                        value={(ratingDrafts[buildRatingKey(project.id, project.teacher.id)] || { contribution: 5 }).contribution}
+                                                        onChange={(event) => updateRatingDraft(project.id, project.teacher.id, { contribution: Number(event.target.value) })}
                                                     >
                                                         {[5, 4, 3, 2, 1].map((score) => (
                                                             <option key={score} value={score}>{score} 分</option>

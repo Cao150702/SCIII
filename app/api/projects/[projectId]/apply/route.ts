@@ -83,15 +83,22 @@ export async function POST(
         return NextResponse.json({ error: '你已在该科研组内' }, { status: 409 })
       }
 
-      const [pending] = await connection.query<RowDataPacket[]>(
-        `SELECT id FROM project_join_requests
-         WHERE project_id = ? AND student_id = ? AND status = 'pending' LIMIT 1`,
+      const [requests] = await connection.query<RowDataPacket[]>(
+        `SELECT id, status FROM project_join_requests
+         WHERE project_id = ? AND student_id = ? LIMIT 1`,
         [projectId, user.id]
       )
 
-      if (pending.length > 0) {
+      if (requests.length > 0) {
+        const existingStatus = (requests[0] as { status?: string }).status
         await connection.rollback()
-        return NextResponse.json({ error: '申请已提交，等待审核' }, { status: 409 })
+        if (existingStatus === 'approved') {
+          return NextResponse.json({ error: '你已加入该科研组' }, { status: 409 })
+        }
+        if (existingStatus === 'pending') {
+          return NextResponse.json({ error: '申请已提交，等待审核' }, { status: 409 })
+        }
+        return NextResponse.json({ error: '申请已被拒绝，请联系导师' }, { status: 409 })
       }
 
       await connection.query(

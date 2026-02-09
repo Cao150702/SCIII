@@ -16,14 +16,26 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => null)
     const projectId = Number(body?.projectId)
     const rateeId = String(body?.rateeId || '')
+    const scoreAttitude = Number(body?.scoreAttitude)
+    const scoreAbility = Number(body?.scoreAbility)
+    const scoreContribution = Number(body?.scoreContribution)
     const score = Number(body?.score)
     const comment = typeof body?.comment === 'string' ? body.comment.trim() : null
 
-    if (!projectId || !rateeId || !Number.isFinite(score)) {
+    if (!projectId || !rateeId) {
       return NextResponse.json({ error: '参数不完整' }, { status: 400 })
     }
 
-    if (score < 1 || score > 5) {
+    const scores = [scoreAttitude, scoreAbility, scoreContribution].filter((value) => Number.isFinite(value))
+    const resolvedScore = scores.length > 0
+      ? Math.round(scores.reduce((sum, value) => sum + value, 0) / scores.length)
+      : score
+
+    if (!Number.isFinite(resolvedScore)) {
+      return NextResponse.json({ error: '评分不能为空' }, { status: 400 })
+    }
+
+    if (resolvedScore < 1 || resolvedScore > 5) {
       return NextResponse.json({ error: '评分必须在 1-5 之间' }, { status: 400 })
     }
 
@@ -71,10 +83,25 @@ export async function POST(request: NextRequest) {
     }
 
     await query(
-      `INSERT INTO ratings (project_id, rater_id, ratee_id, score, comment)
-       VALUES (?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE score = VALUES(score), comment = VALUES(comment), updated_at = NOW()`
-    , [projectId, user.id, rateeId, score, comment])
+      `INSERT INTO ratings (project_id, rater_id, ratee_id, score, score_attitude, score_ability, score_contribution, comment)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+         score = VALUES(score),
+         score_attitude = VALUES(score_attitude),
+         score_ability = VALUES(score_ability),
+         score_contribution = VALUES(score_contribution),
+         comment = VALUES(comment),
+         updated_at = NOW()`
+    , [
+      projectId,
+      user.id,
+      rateeId,
+      resolvedScore,
+      Number.isFinite(scoreAttitude) ? scoreAttitude : null,
+      Number.isFinite(scoreAbility) ? scoreAbility : null,
+      Number.isFinite(scoreContribution) ? scoreContribution : null,
+      comment
+    ])
 
     return NextResponse.json({ ok: true })
   } catch (error) {

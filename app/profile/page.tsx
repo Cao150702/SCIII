@@ -12,12 +12,21 @@ type CurrentUser = {
     role: 'student' | 'teacher'
 }
 
+type Attachment = {
+    id: number
+    title: string
+    url: string
+}
+
 export default function ProfilePage() {
     const router = useRouter()
     const [role, setRole] = useState<'student' | 'teacher'>('student')
     const [selectedSkills, setSelectedSkills] = useState<string[]>(['Python', '计算机视觉'])
     const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null)
     const [isAuth, setIsAuth] = useState(false)
+    const [attachments, setAttachments] = useState<Attachment[]>([])
+    const [attachmentDraft, setAttachmentDraft] = useState({ title: '', url: '' })
+    const [attachmentHint, setAttachmentHint] = useState<string | null>(null)
 
     useEffect(() => {
         if (typeof window === 'undefined') return
@@ -45,11 +54,65 @@ export default function ProfilePage() {
         }
     }, [isAuth, router])
 
+    const apiFetch = async (url: string, options?: RequestInit) => {
+        const headers = new Headers(options?.headers || {})
+        headers.set('Content-Type', 'application/json')
+        if (currentUser) {
+            headers.set('x-user-id', currentUser.id)
+            headers.set('x-user-role', currentUser.role)
+            headers.set('x-user-name', currentUser.name || '')
+        }
+        return fetch(url, { ...options, headers })
+    }
+
+    const loadAttachments = async () => {
+        if (!currentUser) return
+        const response = await apiFetch('/api/attachments')
+        const data = await response.json().catch(() => ({}))
+        if (response.ok) {
+            setAttachments(data.attachments || [])
+        }
+    }
+
+    useEffect(() => {
+        loadAttachments()
+    }, [currentUser])
+
     const handleSaveProfile = () => {
         if (!currentUser) return
         const nextUser = { ...currentUser, role }
         localStorage.setItem('user', JSON.stringify(nextUser))
         setCurrentUser(nextUser)
+    }
+
+    const handleAddAttachment = async () => {
+        if (!attachmentDraft.title.trim() || !attachmentDraft.url.trim()) {
+            setAttachmentHint('请填写附件标题与链接')
+            return
+        }
+        const response = await apiFetch('/api/attachments', {
+            method: 'POST',
+            body: JSON.stringify(attachmentDraft)
+        })
+        const data = await response.json().catch(() => ({}))
+        if (!response.ok) {
+            setAttachmentHint(data?.error || '保存失败')
+            return
+        }
+        setAttachmentHint('附件已保存')
+        setAttachmentDraft({ title: '', url: '' })
+        await loadAttachments()
+    }
+
+    const handleRemoveAttachment = async (id: number) => {
+        const response = await apiFetch('/api/attachments', {
+            method: 'DELETE',
+            body: JSON.stringify({ id })
+        })
+        if (response.ok) {
+            setAttachmentHint('附件已删除')
+            await loadAttachments()
+        }
     }
 
     return (
@@ -152,6 +215,53 @@ export default function ProfilePage() {
                                 />
                             </div>
                         </div>
+
+                        {role === 'student' && (
+                            <div className="glass form-card">
+                                <h3 style={{ marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    学生成果附件（链接）
+                                </h3>
+                                {attachmentHint && <div className="muted" style={{ marginBottom: '0.8rem' }}>{attachmentHint}</div>}
+                                <div className="form-grid">
+                                    <div>
+                                        <label className="form-label">附件标题</label>
+                                        <input
+                                            type="text"
+                                            className="form-input"
+                                            value={attachmentDraft.title}
+                                            onChange={(event) => setAttachmentDraft((prev) => ({ ...prev, title: event.target.value }))}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="form-label">附件链接</label>
+                                        <input
+                                            type="url"
+                                            className="form-input"
+                                            value={attachmentDraft.url}
+                                            onChange={(event) => setAttachmentDraft((prev) => ({ ...prev, url: event.target.value }))}
+                                        />
+                                    </div>
+                                </div>
+                                <div style={{ marginTop: '1rem' }}>
+                                    <button type="button" className="btn btn-primary" onClick={handleAddAttachment}>保存附件</button>
+                                </div>
+                                <div className="member-list" style={{ marginTop: '1.2rem' }}>
+                                    {attachments.length === 0 && <div className="muted">暂无附件</div>}
+                                    {attachments.map((attachment) => (
+                                        <div key={attachment.id} className="member-card">
+                                            <div className="member-info">
+                                                <div className="member-name">{attachment.title}</div>
+                                                <div className="member-meta">{attachment.url}</div>
+                                            </div>
+                                            <div className="member-actions">
+                                                <a className="btn btn-glass" href={attachment.url} target="_blank" rel="noreferrer">打开</a>
+                                                <button className="btn btn-glass" onClick={() => handleRemoveAttachment(attachment.id)}>删除</button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         <div style={{ textAlign: 'right', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', fontSize: '0.85rem' }}>

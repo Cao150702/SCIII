@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS project_join_requests (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   decided_at TIMESTAMP NULL,
   decided_by VARCHAR(32) NULL,
+  UNIQUE KEY uq_request_once (project_id, student_id),
   CONSTRAINT fk_requests_project FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
   CONSTRAINT fk_requests_student FOREIGN KEY (student_id) REFERENCES users(id)
 );
@@ -65,6 +66,9 @@ CREATE TABLE IF NOT EXISTS ratings (
   rater_id VARCHAR(32) NOT NULL,
   ratee_id VARCHAR(32) NOT NULL,
   score TINYINT NOT NULL,
+  score_attitude TINYINT NULL,
+  score_ability TINYINT NULL,
+  score_contribution TINYINT NULL,
   comment VARCHAR(500) NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NULL,
@@ -72,6 +76,15 @@ CREATE TABLE IF NOT EXISTS ratings (
   CONSTRAINT fk_ratings_project FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
   CONSTRAINT fk_ratings_rater FOREIGN KEY (rater_id) REFERENCES users(id),
   CONSTRAINT fk_ratings_ratee FOREIGN KEY (ratee_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS attachments (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id VARCHAR(32) NOT NULL,
+  title VARCHAR(120) NOT NULL,
+  url VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_attachments_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_projects_teacher ON projects(teacher_id);

@@ -523,6 +523,25 @@ p {
   border-top: 1px dashed rgba(255, 255, 255, 0.12);
 }
 
+.dashboard-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.checkbox-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: #cbd5f5;
+}
+
+.checkbox-row input {
+  accent-color: var(--accent);
+}
+
 .form-card {
   padding: 2.5rem;
 }
@@ -695,6 +714,10 @@ p {
   .page-title {
     font-size: 2.2rem;
   }
+
+  .card {
+    padding: 1.6rem;
+  }
 }
 
 @media (max-width: 720px) {
@@ -721,5 +744,29 @@ p {
 
   .login-card {
     padding: 2.2rem;
+  }
+
+  .container {
+    padding: 0 1.2rem;
+  }
+
+  .card-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .member-actions {
+    width: 100%;
+  }
+
+  .member-actions .btn,
+  .member-actions a.btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .project-metrics {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

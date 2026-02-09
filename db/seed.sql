@@ -29,3 +29,8 @@ INSERT INTO notifications (user_id, title, body)
 VALUES
   ('T001', '新的加入申请', '20240101 申请加入你的项目：基于大模型的医学影像分析'),
   ('20240101', '申请已提交', '你的加入申请已提交，等待导师审核');
+
+INSERT INTO attachments (user_id, title, url)
+VALUES
+  ('20240101', '个人简历', 'https://example.com/resume.pdf'),
+  ('20240102', '科研成果集', 'https://example.com/portfolio.pdf');
