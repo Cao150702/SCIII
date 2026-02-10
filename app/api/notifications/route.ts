@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json().catch(() => null)
-    const ids = Array.isArray(body?.ids) ? body.ids.map(Number).filter(Boolean) : []
+    const ids = Array.isArray(body?.ids) ? body.ids.map(Number).filter(Boolean).slice(0, 100) : []
 
     if (ids.length === 0) {
       await query('UPDATE notifications SET is_read = 1 WHERE user_id = ?', [user.id])

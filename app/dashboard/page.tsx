@@ -48,6 +48,7 @@ export default function DashboardPage() {
   const [requestProject, setRequestProject] = useState('全部项目')
   const [selectedRequests, setSelectedRequests] = useState<Record<string, boolean>>({})
   const [pendingAction, setPendingAction] = useState(false)
+  const [isOnline, setIsOnline] = useState(true)
 
   const getStatusLabel = (status: StudentJoinRequest['status']) => {
     if (status === 'approved') return '已通过'
@@ -69,6 +70,19 @@ export default function DashboardPage() {
     }
   }, [])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    setIsOnline(navigator.onLine)
+    const handleOnline = () => setIsOnline(true)
+    const handleOffline = () => setIsOnline(false)
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
+
   const apiFetch = async (url: string, options?: RequestInit) => {
     const headers = new Headers(options?.headers || {})
     headers.set('Content-Type', 'application/json')
@@ -77,7 +91,13 @@ export default function DashboardPage() {
       headers.set('x-user-role', currentUser.role)
       headers.set('x-user-name', currentUser.name || '')
     }
-    return fetch(url, { ...options, headers })
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 8000)
+    try {
+      return await fetch(url, { ...options, headers, signal: controller.signal })
+    } finally {
+      clearTimeout(timeoutId)
+    }
   }
 
   const loadNotifications = async () => {
@@ -163,6 +183,7 @@ export default function DashboardPage() {
           <p className="page-lead">查看申请进度、待办审批与系统通知。</p>
         </div>
 
+        {!isOnline && <div className="glass action-hint">当前处于离线状态，通知与申请可能无法更新。</div>}
         {hint && <div className="glass action-hint"><CheckCircle2 size={16} /> {hint}</div>}
 
         <div className="grid" style={{ gap: '2rem' }}>

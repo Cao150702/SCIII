@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { getDbConfig, query } from '@/lib/db'
 import { getRequestUser } from '@/lib/auth'
+import { isSafeId } from '@/lib/validate'
 
 export async function POST(
   request: NextRequest,
@@ -23,8 +24,8 @@ export async function POST(
     }
 
     const body = await request.json().catch(() => null)
-    const studentId = body?.studentId as string | undefined
-    if (!studentId) {
+    const studentId = body?.studentId
+    if (!isSafeId(studentId)) {
       return NextResponse.json({ error: '缺少学生ID' }, { status: 400 })
     }
 
@@ -41,7 +42,7 @@ export async function POST(
       return NextResponse.json({ error: '你不是该项目管理员' }, { status: 403 })
     }
 
-    await query('DELETE FROM project_members WHERE project_id = ? AND student_id = ?', [projectId, studentId])
+    await query('DELETE FROM project_members WHERE project_id = ? AND student_id = ?', [projectId, String(studentId)])
 
     return NextResponse.json({ ok: true })
   } catch (error) {

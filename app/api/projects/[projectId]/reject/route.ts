@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { getDbConfig, query } from '@/lib/db'
 import { getRequestUser } from '@/lib/auth'
+import { isSafeId } from '@/lib/validate'
 
 export async function POST(
   request: NextRequest,
@@ -23,8 +24,8 @@ export async function POST(
     }
 
     const body = await request.json().catch(() => null)
-    const studentId = body?.studentId as string | undefined
-    if (!studentId) {
+    const studentId = body?.studentId
+    if (!isSafeId(studentId)) {
       return NextResponse.json({ error: '缺少学生ID' }, { status: 400 })
     }
 
@@ -45,12 +46,12 @@ export async function POST(
       `UPDATE project_join_requests
        SET status = 'rejected', decided_at = NOW(), decided_by = ?
        WHERE project_id = ? AND student_id = ? AND status = 'pending'`,
-      [user.id, projectId, studentId]
+      [user.id, projectId, String(studentId)]
     )
 
     await query(
       'INSERT INTO notifications (user_id, title, body) VALUES (?, ?, ?)',
-      [studentId, '申请被拒绝', `你的项目 ${projectId} 申请未通过`]
+      [String(studentId), '申请被拒绝', `你的项目 ${projectId} 申请未通过`]
     )
 
     return NextResponse.json({ ok: true })

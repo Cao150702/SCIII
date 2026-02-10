@@ -27,6 +27,7 @@ export default function ProfilePage() {
     const [attachments, setAttachments] = useState<Attachment[]>([])
     const [attachmentDraft, setAttachmentDraft] = useState({ title: '', url: '' })
     const [attachmentHint, setAttachmentHint] = useState<string | null>(null)
+    const [isOnline, setIsOnline] = useState(true)
 
     useEffect(() => {
         if (typeof window === 'undefined') return
@@ -54,6 +55,19 @@ export default function ProfilePage() {
         }
     }, [isAuth, router])
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        setIsOnline(navigator.onLine)
+        const handleOnline = () => setIsOnline(true)
+        const handleOffline = () => setIsOnline(false)
+        window.addEventListener('online', handleOnline)
+        window.addEventListener('offline', handleOffline)
+        return () => {
+            window.removeEventListener('online', handleOnline)
+            window.removeEventListener('offline', handleOffline)
+        }
+    }, [])
+
     const apiFetch = async (url: string, options?: RequestInit) => {
         const headers = new Headers(options?.headers || {})
         headers.set('Content-Type', 'application/json')
@@ -62,7 +76,13 @@ export default function ProfilePage() {
             headers.set('x-user-role', currentUser.role)
             headers.set('x-user-name', currentUser.name || '')
         }
-        return fetch(url, { ...options, headers })
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 8000)
+        try {
+            return await fetch(url, { ...options, headers, signal: controller.signal })
+        } finally {
+            clearTimeout(timeoutId)
+        }
     }
 
     const loadAttachments = async () => {
@@ -221,6 +241,7 @@ export default function ProfilePage() {
                                 <h3 style={{ marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                     学生成果附件（链接）
                                 </h3>
+                                {!isOnline && <div className="muted" style={{ marginBottom: '0.8rem' }}>离线状态下无法更新附件</div>}
                                 {attachmentHint && <div className="muted" style={{ marginBottom: '0.8rem' }}>{attachmentHint}</div>}
                                 <div className="form-grid">
                                     <div>
@@ -243,7 +264,7 @@ export default function ProfilePage() {
                                     </div>
                                 </div>
                                 <div style={{ marginTop: '1rem' }}>
-                                    <button type="button" className="btn btn-primary" onClick={handleAddAttachment}>保存附件</button>
+                                    <button type="button" className="btn btn-primary" onClick={handleAddAttachment} disabled={!isOnline}>保存附件</button>
                                 </div>
                                 <div className="member-list" style={{ marginTop: '1.2rem' }}>
                                     {attachments.length === 0 && <div className="muted">暂无附件</div>}

@@ -82,6 +82,7 @@ export default function ProjectsPage() {
     const [studentRequests, setStudentRequests] = useState<StudentJoinRequest[]>([])
     const [teacherRequests, setTeacherRequests] = useState<TeacherJoinRequest[]>([])
     const [pendingAction, setPendingAction] = useState<string | null>(null)
+    const [isOnline, setIsOnline] = useState(true)
 
     useEffect(() => {
         if (typeof window === 'undefined') return
@@ -98,6 +99,19 @@ export default function ProjectsPage() {
         }
     }, [])
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        setIsOnline(navigator.onLine)
+        const handleOnline = () => setIsOnline(true)
+        const handleOffline = () => setIsOnline(false)
+        window.addEventListener('online', handleOnline)
+        window.addEventListener('offline', handleOffline)
+        return () => {
+            window.removeEventListener('online', handleOnline)
+            window.removeEventListener('offline', handleOffline)
+        }
+    }, [])
+
     const apiFetch = async (url: string, options?: RequestInit) => {
         const headers = new Headers(options?.headers || {})
         headers.set('Content-Type', 'application/json')
@@ -106,7 +120,13 @@ export default function ProjectsPage() {
             headers.set('x-user-role', currentUser.role)
             headers.set('x-user-name', currentUser.name || '')
         }
-        return fetch(url, { ...options, headers })
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 8000)
+        try {
+            return await fetch(url, { ...options, headers, signal: controller.signal })
+        } finally {
+            clearTimeout(timeoutId)
+        }
     }
 
     const loadProjects = async () => {
@@ -343,6 +363,10 @@ export default function ProjectsPage() {
                         </div>
                     </div>
                 </div>
+
+                {!isOnline && (
+                    <div className="glass action-hint">当前处于离线状态，部分操作不可用。</div>
+                )}
 
                 {actionHint && (
                     <div className="glass action-hint">

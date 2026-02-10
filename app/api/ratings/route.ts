@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { getDbConfig, query } from '@/lib/db'
 import { getRequestUser } from '@/lib/auth'
+import { isOptionalScore, isOptionalString, isScore, isSafeId } from '@/lib/validate'
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,28 +16,38 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json().catch(() => null)
     const projectId = Number(body?.projectId)
-    const rateeId = String(body?.rateeId || '')
-    const scoreAttitude = Number(body?.scoreAttitude)
-    const scoreAbility = Number(body?.scoreAbility)
-    const scoreContribution = Number(body?.scoreContribution)
-    const score = Number(body?.score)
+    const rateeId = body?.rateeId
+    const scoreAttitude = body?.scoreAttitude
+    const scoreAbility = body?.scoreAbility
+    const scoreContribution = body?.scoreContribution
+    const score = body?.score
     const comment = typeof body?.comment === 'string' ? body.comment.trim() : null
 
-    if (!projectId || !rateeId) {
+    if (!projectId || !isSafeId(rateeId)) {
       return NextResponse.json({ error: '参数不完整' }, { status: 400 })
     }
 
-    const scores = [scoreAttitude, scoreAbility, scoreContribution].filter((value) => Number.isFinite(value))
-    const resolvedScore = scores.length > 0
-      ? Math.round(scores.reduce((sum, value) => sum + value, 0) / scores.length)
-      : score
+    if (!isOptionalScore(scoreAttitude) || !isOptionalScore(scoreAbility) || !isOptionalScore(scoreContribution)) {
+      return NextResponse.json({ error: '维度评分必须在 1-5 之间' }, { status: 400 })
+    }
 
-    if (!Number.isFinite(resolvedScore)) {
+    if (!isScore(score) && !(isScore(scoreAttitude) || isScore(scoreAbility) || isScore(scoreContribution))) {
       return NextResponse.json({ error: '评分不能为空' }, { status: 400 })
     }
 
+    const scores = [scoreAttitude, scoreAbility, scoreContribution]
+      .filter((value) => isScore(value))
+      .map((value) => Number(value))
+    const resolvedScore = scores.length > 0
+      ? Math.round(scores.reduce((sum, value) => sum + value, 0) / scores.length)
+      : Number(score)
+
     if (resolvedScore < 1 || resolvedScore > 5) {
       return NextResponse.json({ error: '评分必须在 1-5 之间' }, { status: 400 })
+    }
+
+    if (!isOptionalString(comment, 500)) {
+      return NextResponse.json({ error: '评语过长' }, { status: 400 })
     }
 
     const projectRows = await query<{ teacher_id: string }>(
@@ -95,11 +106,11 @@ export async function POST(request: NextRequest) {
     , [
       projectId,
       user.id,
-      rateeId,
+      String(rateeId),
       resolvedScore,
-      Number.isFinite(scoreAttitude) ? scoreAttitude : null,
-      Number.isFinite(scoreAbility) ? scoreAbility : null,
-      Number.isFinite(scoreContribution) ? scoreContribution : null,
+      isScore(scoreAttitude) ? Number(scoreAttitude) : null,
+      isScore(scoreAbility) ? Number(scoreAbility) : null,
+      isScore(scoreContribution) ? Number(scoreContribution) : null,
       comment
     ])
 

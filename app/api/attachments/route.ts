@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { getDbConfig, query } from '@/lib/db'
 import { getRequestUser } from '@/lib/auth'
+import { isNonEmptyString, isValidUrl } from '@/lib/validate'
 
 export async function GET(request: NextRequest) {
   try {
@@ -49,11 +50,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json().catch(() => null)
-    const title = typeof body?.title === 'string' ? body.title.trim() : ''
-    const url = typeof body?.url === 'string' ? body.url.trim() : ''
+    const title = body?.title
+    const url = body?.url
 
-    if (!title || !url) {
-      return NextResponse.json({ error: '标题或链接不能为空' }, { status: 400 })
+    if (!isNonEmptyString(title, 120) || !isValidUrl(url, 255)) {
+      return NextResponse.json({ error: '标题或链接不合法' }, { status: 400 })
     }
 
     await query('INSERT INTO attachments (user_id, title, url) VALUES (?, ?, ?)', [user.id, title, url])

@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { getDbConfig, getPool } from '@/lib/db'
 import type { RowDataPacket } from 'mysql2/promise'
 import { getRequestUser } from '@/lib/auth'
+import { isSafeId } from '@/lib/validate'
 
 export async function POST(
   request: NextRequest,
@@ -24,8 +25,8 @@ export async function POST(
     }
 
     const body = await request.json().catch(() => null)
-    const studentId = body?.studentId as string | undefined
-    if (!studentId) {
+    const studentId = body?.studentId
+    if (!isSafeId(studentId)) {
       return NextResponse.json({ error: '缺少学生ID' }, { status: 400 })
     }
 
@@ -86,7 +87,7 @@ export async function POST(
       const [requests] = await connection.query<RowDataPacket[]>(
         `SELECT id FROM project_join_requests
          WHERE project_id = ? AND student_id = ? AND status = 'pending' FOR UPDATE`,
-        [projectId, studentId]
+        [projectId, String(studentId)]
       )
 
       if (requests.length === 0) {
@@ -103,12 +104,12 @@ export async function POST(
 
       await connection.query(
         'INSERT IGNORE INTO project_members (project_id, student_id) VALUES (?, ?)',
-        [projectId, studentId]
+        [projectId, String(studentId)]
       )
 
       await connection.query(
         'INSERT INTO notifications (user_id, title, body) VALUES (?, ?, ?)',
-        [studentId, '申请已通过', `你已加入项目 ${projectId}`]
+        [String(studentId), '申请已通过', `你已加入项目 ${projectId}`]
       )
 
       await connection.commit()

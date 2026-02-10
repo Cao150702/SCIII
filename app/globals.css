@@ -422,6 +422,7 @@ p {
   gap: 0.6rem;
   color: #cbd5f5;
   font-size: 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .group-section {
